@@ -1,3 +1,4 @@
+use client;
 import Link from "next/link";
 import { currentUser } from "../../lib/mock";
 import { Role } from "../../lib/types";
