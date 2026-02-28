@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+yarn.lock
+
+# Next.js
+.next/
+out/
+
+# Build artifacts
+dist/
+.tsbuildinfo
+
+# Env files
+.env
+.env.*
+backend/.env
+frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.vercel/
+.idea/
+.vscode/
+coverage/

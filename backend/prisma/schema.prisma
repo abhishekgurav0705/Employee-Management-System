@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  activityLogs ActivityLog[]
+  employee     Employee? @relation("EmployeeUser")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employees   Employee[]
+}
+
+model Employee {
+  id             String   @id @default(uuid())
+  userId         String?  @unique
+  user           User?    @relation("EmployeeUser", fields: [userId], references: [id])
+  employeeCode   String   @unique
+  firstName      String
+  lastName       String
+  email          String   @unique
+  phone          String?
+  dateOfJoining  DateTime
+  departmentId   String
+  department     Department @relation(fields: [departmentId], references: [id])
+  designation    String
+  managerId      String?
+  manager        Employee? @relation("ManagerEmployees", fields: [managerId], references: [id])
+  reports        Employee[] @relation("ManagerEmployees")
+  status         EmployeeStatus
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  leaveRequests  LeaveRequest[] @relation("LeaveEmployee")
+  approvedLeaves LeaveRequest[] @relation("LeaveApprovedBy")
+  attendance     Attendance[]
+}
+
+model LeaveType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  requests    LeaveRequest[]
+}
+
+model LeaveRequest {
+  id                    String   @id @default(uuid())
+  employeeId            String
+  employee              Employee @relation("LeaveEmployee", fields: [employeeId], references: [id])
+  leaveTypeId           String
+  leaveType             LeaveType @relation(fields: [leaveTypeId], references: [id])
+  startDate             DateTime
+  endDate               DateTime
+  reason                String?
+  status                LeaveStatus
+  approvedByEmployeeId  String?
+  approvedByEmployee    Employee? @relation("LeaveApprovedBy", fields: [approvedByEmployeeId], references: [id])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  date         DateTime
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ActivityLog {
+  id            String   @id @default(uuid())
+  actorUserId   String
+  actor         User     @relation(fields: [actorUserId], references: [id])
+  action        String
+  targetType    TargetType
+  targetId      String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  HR
+  MANAGER
+  EMPLOYEE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TargetType {
+  EMPLOYEE
+  LEAVE
+  DEPARTMENT
+  ATTENDANCE
+}
