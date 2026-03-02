@@ -21,19 +21,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const t = typeof window !== "undefined" ? localStorage.getItem("ems_token") : null;
+    const isPublicPage = pathname === "/" || pathname === "/login";
+
     if (t) {
       setToken(t);
       api.auth.me().then((res) => {
         const u = (res as any).user ?? (res as any);
-        setUser(u as ApiUser);
+        const userObj = u as ApiUser;
+        setUser(userObj);
+
+        // RBAC: Protect Admin routes
+        const adminRoutes = ["/employees", "/departments", "/leave/approvals", "/activity-log", "/settings"];
+        const isEmployee = String(userObj.role ?? "").toUpperCase() === "EMPLOYEE";
+        
+        if (isEmployee && adminRoutes.some(route => pathname.startsWith(route))) {
+          // Special case for My Profile which is /employees/[id]
+          const isMyProfile = pathname.startsWith("/employees/") && !pathname.endsWith("/edit") && !pathname.endsWith("/new");
+          if (!isMyProfile) {
+            router.replace("/dashboard");
+          }
+        }
       }).catch(() => {
         localStorage.removeItem("ems_token");
         setToken(null);
         setUser(null);
-        if (pathname !== "/" && pathname !== "/login") router.replace("/login");
+        if (!isPublicPage) router.replace("/login");
       });
     } else {
-      if (pathname !== "/" && pathname !== "/login") router.replace("/login");
+      if (!isPublicPage) router.replace("/login");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);

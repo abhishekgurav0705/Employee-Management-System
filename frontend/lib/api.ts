@@ -1,4 +1,4 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 export type ApiUser = { id: string; email: string; role: string; name?: string };
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -8,13 +8,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(init.headers || {})
   };
-  if (!API_BASE) throw new Error("API base URL missing");
+  
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  
   if (res.status === 401 || res.status === 403) {
-    if (typeof window !== "undefined") window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("ems_token");
+      window.location.href = "/login";
+    }
     throw new Error("unauthorized");
   }
-  if (!res.ok) throw new Error(await res.text());
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `Request failed with status ${res.status}`);
+  }
+  
   return res.json();
 }
 
