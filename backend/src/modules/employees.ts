@@ -78,7 +78,22 @@ router.post("/", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (re
 router.put("/:id", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (req: Request, res: Response) => {
   const parsed = employeeSchema.partial().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
-  const employee = await prisma.employee.update({ where: { id: req.params.id }, data: parsed.data });
+  const { role, password, dateOfJoining, departmentId, ...rest } = parsed.data;
+  
+  const data: any = { ...rest };
+  if (typeof dateOfJoining === "string") data.dateOfJoining = new Date(dateOfJoining);
+  if (typeof departmentId === "string") data.departmentId = departmentId;
+  
+  // Update nested user fields if provided
+  if (role || password || rest.email) {
+    data.user = { update: {} as any };
+    if (role) (data.user.update as any).role = role;
+    if (password) (data.user.update as any).passwordHash = bcrypt.hashSync(password, 10);
+    // Keep user email consistent if changed
+    if (rest.email) (data.user.update as any).email = rest.email;
+  }
+  
+  const employee = await prisma.employee.update({ where: { id: req.params.id }, data, include: { user: true } });
   res.json({ employee });
 }));
 
