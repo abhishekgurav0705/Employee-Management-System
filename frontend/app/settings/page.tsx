@@ -380,7 +380,7 @@ function MyAccountSettings({ user, onSave }: { user: any, onSave: (t: string, d:
   const [saving, setSaving] = useState(false);
 
   const persist = async () => {
-    if (!user?.id) {
+    if (!user?.email) {
       onSave("Not Supported", "Missing user id for profile update.");
       return;
     }
@@ -388,8 +388,16 @@ function MyAccountSettings({ user, onSave }: { user: any, onSave: (t: string, d:
     try {
       const [firstName, ...rest] = String(displayName).trim().split(/\s+/);
       const lastName = rest.join(" ") || "NA";
-      // Try to update employee profile (common case: user is an employee record)
-      await api.employees.update(user.id, { name: displayName, firstName, lastName });
+      // Find employee by email and update first/last name
+      const list = await api.employees.list() as any;
+      const employees = Array.isArray(list) ? list : (list.employees || []);
+      const emp = employees.find((e: any) => String(e.email).toLowerCase() === String(user.email).toLowerCase());
+      if (!emp) {
+        onSave("Not Supported", "No employee found linked to your account.");
+        setSaving(false);
+        return;
+      }
+      await api.employees.update(emp.id, { firstName, lastName });
       onSave("Profile Updated", "Your personal information has been saved.");
     } catch (e: any) {
       onSave("Update Failed", e?.message || "Could not update profile.");

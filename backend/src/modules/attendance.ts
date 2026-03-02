@@ -10,29 +10,45 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 const checkSchema = z.object({
-  employeeId: z.string(),
-  date: z.string()
+  employeeId: z.string().optional(),
+  date: z.string().optional()
 });
 
-router.post("/check-in", requireAuth, asyncHandler(async (req: Request, res: Response) => {
+async function resolveEmployeeIdFromUser(req: Request & { user?: AuthUser }) {
+  const userId = req.user!.id;
+  let emp = await prisma.employee.findFirst({ where: { userId } });
+  if (!emp && req.user?.email) {
+    emp = await prisma.employee.findFirst({ where: { email: req.user.email } });
+  }
+  return emp?.id;
+}
+
+router.post("/check-in", requireAuth, asyncHandler(async (req: Request & { user?: AuthUser }, res: Response) => {
   const parsed = checkSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
-  const record = await prisma.attendance.create({ data: { ...parsed.data, checkInTime: new Date().toISOString() } });
+  const employeeId = (await resolveEmployeeIdFromUser(req)) ?? parsed.data.employeeId;
+  if (!employeeId) return res.status(404).json({ error: "no_employee_link" });
+  const date = parsed.data.date ?? new Date().toISOString();
+  const record = await prisma.attendance.create({ data: { employeeId, date, checkInTime: new Date().toISOString() } });
   res.status(201).json({ record });
 }));
 
-router.post("/check-out", requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post("/check-out", requireAuth, asyncHandler(async (req: Request & { user?: AuthUser }, res: Response) => {
   const parsed = checkSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+  const employeeId = (await resolveEmployeeIdFromUser(req)) ?? parsed.data.employeeId;
+  if (!employeeId) return res.status(404).json({ error: "no_employee_link" });
+  const date = parsed.data.date ?? new Date().toISOString();
   const record = await prisma.attendance.updateMany({
-    where: { employeeId: parsed.data.employeeId, date: parsed.data.date },
+    where: { employeeId, date },
     data: { checkOutTime: new Date().toISOString() }
   });
   res.json({ updated: record.count });
 }));
 
 router.get("/my", requireAuth, asyncHandler(async (req: Request & { user?: AuthUser }, res: Response) => {
-  const employeeId = req.user!.id;
+  const employeeId = await resolveEmployeeIdFromUser(req);
+  if (!employeeId) return res.json({ records: [] });
   const records = await prisma.attendance.findMany({ where: { employeeId } });
   res.json({ records });
 }));
