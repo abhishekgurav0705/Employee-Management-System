@@ -81,6 +81,14 @@ router.put("/:id", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (
   const { role, password, dateOfJoining, departmentId, ...rest } = parsed.data;
   
   const data: any = { ...rest };
+  // Map optional composite name -> firstName/lastName
+  if ((rest as any).name && !(rest as any).firstName && !(rest as any).lastName) {
+    const n = String((rest as any).name).trim();
+    const parts = n.split(/\s+/);
+    data.firstName = parts[0] || "";
+    data.lastName = parts.slice(1).join(" ") || "";
+    delete (data as any).name;
+  }
   if (typeof dateOfJoining === "string") data.dateOfJoining = new Date(dateOfJoining);
   if (typeof departmentId === "string") data.departmentId = departmentId;
   

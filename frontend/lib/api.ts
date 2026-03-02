@@ -31,12 +31,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (attempts[i] > 0) await delay(attempts[i]);
     try {
       const res = await fetch(`${base}${path}`, { ...init, headers, mode: "cors" });
-      if (res.status === 401 || res.status === 403) {
+      if (res.status === 401) {
         if (typeof window !== "undefined") {
           localStorage.removeItem("ems_token");
           window.location.href = "/login";
         }
         throw new Error("unauthorized");
+      }
+      if (res.status === 403) {
+        // Forbidden should not force logout; let caller handle RBAC
+        const errorText = await res.text();
+        throw new Error(errorText || "forbidden");
       }
       if (!res.ok) {
         // Retry on typical cold start / transient codes
