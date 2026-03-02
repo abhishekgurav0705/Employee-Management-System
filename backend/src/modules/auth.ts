@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -12,7 +12,7 @@ const loginSchema = z.object({
   password: z.string().min(6)
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
   const { email, password } = parsed.data;
@@ -22,7 +22,7 @@ router.post("/login", async (req, res) => {
   return res.json({ token });
 });
 
-router.get("/me", async (req, res) => {
+router.get("/me", async (req: Request, res: Response) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "unauthorized" });
   const token = auth.slice(7);
