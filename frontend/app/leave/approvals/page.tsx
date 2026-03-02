@@ -1,20 +1,25 @@
 "use client";
-import { useState } from "react";
-import { leaves as initialLeaves, employees } from "../../../lib/mock";
-import { Card, CardContent } from "../../../components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "../../../components/ui/table";
-import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "../../../components/ui/drawer";
-import { formatDate } from "../../../lib/utils";
+import { Spinner } from "../../../components/ui/spinner";
+import { api } from "../../../lib/api";
+import { ToastRoot, ToastTitle, ToastDescription } from "../../../components/ui/toast";
 
 export default function LeaveApprovalsPage() {
-  const [leaves, setLeaves] = useState(initialLeaves);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
 
-  function setStatus(id: string, status: "Approved" | "Rejected") {
-    setLeaves((prev) => prev.map((l) => (l.id === id ? { ...l, status, updatedAt: new Date().toISOString() } : l)));
-  }
+  useEffect(() => {
+    setLoading(true);
+    api.leaves.pending()
+      .then((res: any) => setRequests((res.requests ?? res) || []))
+      .catch((e: any) => { setError(e?.message ?? "Failed to load requests"); setToastOpen(true); })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -23,79 +28,50 @@ export default function LeaveApprovalsPage() {
       </div>
 
       <Card>
+        <CardHeader className="text-sm text-secondary">Pending Approvals</CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>Employee</TH>
-                  <TH>Leave Type</TH>
-                  <TH>Dates</TH>
-                  <TH>Status</TH>
-                  <TH></TH>
-                </TR>
-              </THead>
-              <TBody>
-                {leaves.map((l) => {
-                  const emp = employees.find((e) => e.id === l.employeeId)?.name ?? "-";
-                  return (
-                    <TR key={l.id} className="cursor-pointer" onClick={() => setSelectedId(l.id)}>
-                      <TD>{emp}</TD>
-                      <TD>{l.type}</TD>
-                      <TD>{formatDate(l.startDate)} - {formatDate(l.endDate)}</TD>
-                      <TD>
-                        <Badge variant={l.status === "Approved" ? "success" : l.status === "Rejected" ? "destructive" : "warning"}>{l.status}</Badge>
-                      </TD>
-                      <TD className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setStatus(l.id, "Approved"); }}>Approve</Button>
-                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setStatus(l.id, "Rejected"); }}>Reject</Button>
-                        </div>
+          {loading ? (
+            <div className="flex items-center gap-3 text-secondary"><Spinner /> Loading leave requests...</div>
+          ) : requests.length === 0 ? (
+            <div className="rounded-lg border border-border p-8 text-center text-secondary">No pending requests</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Employee</TH>
+                    <TH>Type</TH>
+                    <TH>Start</TH>
+                    <TH>End</TH>
+                    <TH>Status</TH>
+                    <TH>Actions</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {requests.map((r) => (
+                    <TR key={r.id}>
+                      <TD>{r.employee?.name ?? r.employeeId}</TD>
+                      <TD>{r.leaveType?.name ?? r.leaveTypeId}</TD>
+                      <TD>{new Date(r.startDate).toLocaleDateString()}</TD>
+                      <TD>{new Date(r.endDate).toLocaleDateString()}</TD>
+                      <TD>{String(r.status ?? "").toUpperCase()}</TD>
+                      <TD className="flex gap-2">
+                        <Button onClick={() => api.leaves.approve(r.id).then(() => location.reload())}>Approve</Button>
+                        <Button variant="outline" onClick={() => api.leaves.reject(r.id).then(() => location.reload())}>Reject</Button>
                       </TD>
                     </TR>
-                  );
-                })}
-              </TBody>
-            </Table>
-          </div>
+                  ))}
+                </TBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Drawer open={!!selectedId} onOpenChange={(o) => !o && setSelectedId(null)}>
-        <DrawerTrigger asChild />
-        <DrawerContent>
-          {selectedId ? <LeaveDetail id={selectedId} /> : null}
-          <div className="mt-4 flex justify-end">
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    </div>
-  );
-}
-
-function LeaveDetail({ id }: { id: string }) {
-  const l = initialLeaves.find((x) => x.id === id)!;
-  const emp = employees.find((e) => e.id === l.employeeId)?.name ?? "-";
-  return (
-    <div>
-      <h3 className="text-lg font-semibold">{emp}</h3>
-      <div className="subtle">{l.type} • {formatDate(l.startDate)} - {formatDate(l.endDate)}</div>
-      {l.reason && <p className="mt-3 text-sm">{l.reason}</p>}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-border p-3">
-          <div className="text-xs text-secondary">Submitted</div>
-          <div className="text-sm">{formatDate(l.createdAt)}</div>
-        </div>
-        {l.updatedAt && (
-          <div className="rounded-lg border border-border p-3">
-            <div className="text-xs text-secondary">Updated</div>
-            <div className="text-sm">{formatDate(l.updatedAt)}</div>
-          </div>
-        )}
-      </div>
+      <ToastRoot open={toastOpen} onOpenChange={setToastOpen}>
+        <ToastTitle>Error</ToastTitle>
+        <ToastDescription>{error}</ToastDescription>
+      </ToastRoot>
     </div>
   );
 }
