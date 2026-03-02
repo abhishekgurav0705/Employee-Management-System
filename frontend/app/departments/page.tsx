@@ -18,6 +18,7 @@ export default function DepartmentsPage() {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, title: "", description: "" });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -69,6 +70,27 @@ export default function DepartmentsPage() {
       fetchData();
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function removeDepartment(id: string) {
+    const dept = departments.find(d => d.id === id);
+    const members = employees.filter(e => e.departmentId === id).length;
+    if (members > 0) {
+      setToast({ open: true, title: "Cannot delete", description: "Move or remove members before deleting this department." });
+      return;
+    }
+    const ok = typeof window !== "undefined" ? window.confirm(`Delete ${dept?.name || "this department"}?`) : true;
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      await api.departments.remove(id);
+      setDepartments(prev => prev.filter(d => d.id !== id));
+      setToast({ open: true, title: "Department Deleted", description: "The department has been removed." });
+    } catch (e) {
+      setToast({ open: true, title: "Delete failed", description: "Unable to delete department." });
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -138,7 +160,13 @@ export default function DepartmentsPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeDepartment(d.id)}
+                      disabled={deletingId === d.id}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

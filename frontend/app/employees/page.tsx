@@ -34,6 +34,7 @@ export default function EmployeesPage() {
   const [employeesData, setEmployeesData] = useState<any[]>([]);
   const [departmentsData, setDepartmentsData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     setLoading(true);
@@ -64,6 +65,24 @@ export default function EmployeesPage() {
   const selectedEmployee = useMemo(() => 
     employeesData.find(e => e.id === selectedId), 
   [selectedId, employeesData]);
+
+  async function handleDeleteSelected() {
+    if (!selectedId) return;
+    const employee = employeesData.find(e => e.id === selectedId);
+    const name = employee?.name || "this employee";
+    const ok = typeof window !== "undefined" ? window.confirm(`Delete ${name}?`) : true;
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await api.employees.remove(selectedId);
+      setEmployeesData(prev => prev.filter(e => e.id !== selectedId));
+      setSelectedId(null);
+    } catch (e) {
+      setDeleting(false);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -255,13 +274,19 @@ export default function EmployeesPage() {
                 <div className="pt-6 border-t border-border">
                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Quick Actions</h4>
                    <div className="flex flex-wrap gap-3">
-                     <Link href={`/employees/${selectedId}/edit`}>
+                    <Link href={`/employees/${selectedId}/edit`}>
                        <Button variant="outline" size="sm">
                          <Edit className="h-4 w-4 mr-2" /> Edit Profile
                        </Button>
                      </Link>
-                     <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                       <Trash2 className="h-4 w-4 mr-2" /> Deactivate
+                     <Button 
+                       variant="outline" 
+                       size="sm" 
+                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                       onClick={handleDeleteSelected}
+                       disabled={deleting}
+                     >
+                       <Trash2 className="h-4 w-4 mr-2" /> {deleting ? "Deleting..." : "Delete"}
                      </Button>
                    </div>
                 </div>
