@@ -19,7 +19,10 @@ import {
   Shield,
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { cn } from "../../../lib/utils";
@@ -33,6 +36,7 @@ export default function NewEmployeePage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    password: "Password123!",
     phone: "",
     designation: "",
     departmentId: "",
@@ -43,6 +47,7 @@ export default function NewEmployeePage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     api.departments.list()
@@ -65,6 +70,8 @@ export default function NewEmployeePage() {
     if (!form.name.trim()) e.name = "Full name is required";
     if (!form.email.trim()) e.email = "Email address is required";
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email format";
+    if (!form.password.trim()) e.password = "Initial password is required";
+    else if (form.password.length < 6) e.password = "Password must be at least 6 characters";
     if (!form.designation.trim()) e.designation = "Job designation is required";
     if (!form.departmentId) e.departmentId = "Please select a department";
     if (!form.employeeCode.trim()) e.employeeCode = "Employee code is required";
@@ -86,6 +93,7 @@ export default function NewEmployeePage() {
         firstName,
         lastName,
         email: form.email,
+        password: form.password,
         phone: form.phone,
         designation: form.designation,
         departmentId: form.departmentId,
@@ -168,6 +176,28 @@ export default function NewEmployeePage() {
                     onChange={(e) => setForm({ ...form, phone: e.target.value })} 
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Initial Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Min 6 characters" 
+                    className={cn("pl-10 pr-10", errors.password && "border-destructive focus-visible:ring-destructive")}
+                    value={form.password} 
+                    onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs text-destructive font-medium">{errors.password}</p>}
               </div>
             </div>
           </CardContent>
