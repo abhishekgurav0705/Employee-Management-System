@@ -1,4 +1,4 @@
-use client;
+"use client";
 import Image from "next/image";
 import { currentUser } from "../../lib/mock";
 import { DropdownMenu, DropdownTrigger, DropdownItem, DropdownContent } from "../ui/dropdown-menu";
