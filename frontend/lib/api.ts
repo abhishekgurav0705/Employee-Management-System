@@ -1,4 +1,5 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+export type ApiUser = { id: string; email: string; role: string; name?: string };
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("ems_token") : null;
@@ -21,7 +22,7 @@ export const api = {
   auth: {
     login: (email: string, password: string) =>
       request<{ token: string }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
-    me: () => request("/api/auth/me")
+    me: () => request<{ user: ApiUser } | ApiUser>("/api/auth/me")
   },
   employees: {
     list: () => request("/api/employees"),

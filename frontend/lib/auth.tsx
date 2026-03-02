@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { api } from "./api";
+import { api, type ApiUser } from "./api";
 
 type User = { id: string; email: string; role: string; name?: string };
 type AuthContextType = {
@@ -23,8 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const t = typeof window !== "undefined" ? localStorage.getItem("ems_token") : null;
     if (t) {
       setToken(t);
-      api.auth.me().then((u: any) => {
-        setUser(u.user ?? u);
+      api.auth.me().then((res) => {
+        const u = (res as any).user ?? (res as any);
+        setUser(u as ApiUser);
       }).catch(() => {
         localStorage.removeItem("ems_token");
         setToken(null);
@@ -42,8 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("ems_token", res.token);
     setToken(res.token);
     const me = await api.auth.me();
-    const u = me.user ?? me;
-    setUser(u);
+    const u = (me as any).user ?? (me as any);
+    setUser(u as ApiUser);
     const role = String(u.role ?? "").toUpperCase();
     router.replace("/dashboard");
   };
