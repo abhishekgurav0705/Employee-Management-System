@@ -373,7 +373,31 @@ function RolesPermissionsSettings({ onSave }: { onSave: (t: string, d: string) =
   );
 }
 
+import { api } from "../../lib/api";
+
 function MyAccountSettings({ user, onSave }: { user: any, onSave: (t: string, d: string) => void }) {
+  const [displayName, setDisplayName] = useState(user?.name || "John Doe");
+  const [saving, setSaving] = useState(false);
+
+  const persist = async () => {
+    if (!user?.id) {
+      onSave("Not Supported", "Missing user id for profile update.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const [firstName, ...rest] = String(displayName).trim().split(/\s+/);
+      const lastName = rest.join(" ") || "NA";
+      // Try to update employee profile (common case: user is an employee record)
+      await api.employees.update(user.id, { name: displayName, firstName, lastName });
+      onSave("Profile Updated", "Your personal information has been saved.");
+    } catch (e: any) {
+      onSave("Update Failed", e?.message || "Could not update profile.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -385,7 +409,7 @@ function MyAccountSettings({ user, onSave }: { user: any, onSave: (t: string, d:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Display Name</label>
-              <Input defaultValue={user?.name || "John Doe"} />
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Email Address</label>
@@ -398,7 +422,7 @@ function MyAccountSettings({ user, onSave }: { user: any, onSave: (t: string, d:
               </div>
             </div>
           </div>
-          <Button onClick={() => onSave("Profile Updated", "Your personal information has been saved.")}>
+          <Button onClick={persist} disabled={saving}>
             Update Profile
           </Button>
         </CardContent>
