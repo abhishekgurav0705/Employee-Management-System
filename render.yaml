@@ -21,7 +21,7 @@ services:
       - key: NPM_CONFIG_PRODUCTION
         value: "false"
       - key: CORS_ORIGIN
-        value: https://ems-frontend.onrender.com
+        value: https://ems-frontend-nb3w.onrender.com
 
   - type: web
     name: ems-frontend
@@ -34,7 +34,7 @@ services:
     autoDeploy: true
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
-        value: https://ems-backend.onrender.com
+        value: https://ems-backend-z8h0.onrender.com
 
 databases:
   - name: ems-db
