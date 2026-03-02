@@ -93,16 +93,30 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 This project is optimized for deployment on [Render.com](https://render.com).
 
 ### Backend (Web Service)
+- **Root Directory**: `backend`
 - **Build Command**: `npm install && npm run build`
 - **Start Command**: `npm run start`
-- **Root Directory**: `backend`
-- **Env Vars**: Set `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`.
+- **Post‑Deploy Command (recommended)**: `npm run migrate`
+- **Health Check Path**: `/api/health`
+- **Env Vars**:
+  - `DATABASE_URL` — include SSL for hosted Postgres, e.g.  
+    `postgresql://user:password@host:5432/dbname?sslmode=require`
+  - `JWT_SECRET` — long random secret
+  - `NODE_ENV=production`
+  - `CORS_ORIGIN` — your frontend origin (e.g., `https://ems-frontend-xxxx.onrender.com`)
 
 ### Frontend (Web Service)
 - **Build Command**: `npm install && npm run build`
 - **Start Command**: `npm run start`
 - **Root Directory**: `frontend`
-- **Env Vars**: Set `NEXT_PUBLIC_API_BASE_URL` to your backend URL.
+- **Env Vars**:
+  - `NEXT_PUBLIC_API_BASE_URL` — must be the exact backend HTTPS URL (e.g., `https://ems-backend-xxxx.onrender.com`)
+    - When front-end is under HTTPS, the API URL should also be HTTPS to avoid mixed-content/CORS issues.
+
+### CORS & SSL Notes
+- Backend reflects `CORS_ORIGIN` (comma-separated list) when set, otherwise allows requests from any origin.
+- For Render/Neon/Cloud Postgres, append `?sslmode=require` to `DATABASE_URL` to prevent TLS errors.
+- Keep the backend warm (optional) by pinging `/api/health` every 5 minutes using a scheduler (cron-job.org).
 
 ## 🔐 Sample Credentials (Mock/Seed)
 

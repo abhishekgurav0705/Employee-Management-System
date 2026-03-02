@@ -1,13 +1,15 @@
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { Router, Request, Response } from "express";
+import { prisma } from "../db";
 import { requireAuth, requireRole } from "../middleware/auth";
 
-const prisma = new PrismaClient();
 const router = Router();
 
-router.get("/", requireAuth, requireRole("ADMIN", "HR"), async (_req, res) => {
+const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+router.get("/", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (_req: Request, res: Response) => {
   const logs = await prisma.activityLog.findMany({ orderBy: { createdAt: "desc" } });
   res.json({ logs });
-});
+}));
 
 export default router;

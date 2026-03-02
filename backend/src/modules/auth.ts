@@ -2,9 +2,8 @@ import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../db";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 const loginSchema = z.object({
@@ -12,7 +11,10 @@ const loginSchema = z.object({
   password: z.string().min(6)
 });
 
-router.post("/login", async (req: Request, res: Response) => {
+const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+router.post("/login", asyncHandler(async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
   const { email, password } = parsed.data;
@@ -20,9 +22,9 @@ router.post("/login", async (req: Request, res: Response) => {
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) return res.status(401).json({ error: "invalid_credentials" });
   const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, process.env.JWT_SECRET ?? "dev-secret", { expiresIn: "7d" });
   return res.json({ token });
-});
+}));
 
-router.get("/me", async (req: Request, res: Response) => {
+router.get("/me", asyncHandler(async (req: Request, res: Response) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "unauthorized" });
   const token = auth.slice(7);
@@ -34,6 +36,6 @@ router.get("/me", async (req: Request, res: Response) => {
   } catch {
     return res.status(401).json({ error: "invalid_token" });
   }
-});
+}));
 
 export default router;
