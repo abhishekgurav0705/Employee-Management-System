@@ -41,11 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             router.replace("/dashboard");
           }
         }
-      }).catch(() => {
-        localStorage.removeItem("ems_token");
-        setToken(null);
-        setUser(null);
-        if (!isPublicPage) router.replace("/login");
+      }).catch((e: any) => {
+        const msg = String(e?.message || "");
+        // Only force logout for actual unauthorized responses.
+        if (msg.toLowerCase() === "unauthorized") {
+          localStorage.removeItem("ems_token");
+          setToken(null);
+          setUser(null);
+          if (!isPublicPage) router.replace("/login");
+        } else {
+          // Network/CORS/cold-start errors: don't log out; keep current session.
+          // Optionally we could retry silently after a short delay.
+          // setTimeout(() => api.auth.me().catch(() => {}), 3000);
+        }
       });
     } else {
       if (!isPublicPage) router.replace("/login");

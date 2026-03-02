@@ -37,7 +37,9 @@ export default function NewEmployeePage() {
     designation: "",
     departmentId: "",
     role: "EMPLOYEE",
-    status: "ACTIVE"
+    status: "ACTIVE",
+    employeeCode: `EMP-${Math.random().toString().slice(2, 8)}`,
+    dateOfJoining: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,6 +67,8 @@ export default function NewEmployeePage() {
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email format";
     if (!form.designation.trim()) e.designation = "Job designation is required";
     if (!form.departmentId) e.departmentId = "Please select a department";
+    if (!form.employeeCode.trim()) e.employeeCode = "Employee code is required";
+    if (!form.dateOfJoining) e.dateOfJoining = "Date of joining is required";
     
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -75,11 +79,21 @@ export default function NewEmployeePage() {
     
     setIsSubmitting(true);
     try {
-      await api.employees.create({
-        ...form,
-        // Mocking password for new employees
-        password: "Password123!" 
-      });
+      const [firstName, ...rest] = form.name.trim().split(/\s+/);
+      const lastName = rest.join(" ") || "NA";
+      const payload = {
+        employeeCode: form.employeeCode,
+        firstName,
+        lastName,
+        email: form.email,
+        phone: form.phone,
+        designation: form.designation,
+        departmentId: form.departmentId,
+        role: form.role,
+        status: form.status,
+        dateOfJoining: new Date(form.dateOfJoining).toISOString()
+      };
+      await api.employees.create(payload);
       showToast("Employee Added", `${form.name} has been successfully registered.`);
       setTimeout(() => router.push("/employees"), 1500);
     } catch (error: any) {
@@ -184,6 +198,20 @@ export default function NewEmployeePage() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-semibold">Employee Code</label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="EMP-123456" 
+                    className={cn("pl-10", errors.employeeCode && "border-destructive focus-visible:ring-destructive")}
+                    value={form.employeeCode} 
+                    onChange={(e) => setForm({ ...form, employeeCode: e.target.value })} 
+                  />
+                </div>
+                {errors.employeeCode && <p className="text-xs text-destructive font-medium">{errors.employeeCode}</p>}
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-semibold">Department</label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -200,6 +228,20 @@ export default function NewEmployeePage() {
                   </select>
                 </div>
                 {errors.departmentId && <p className="text-xs text-destructive font-medium">{errors.departmentId}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Date of Joining</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    type="date"
+                    className={cn("pl-10", errors.dateOfJoining && "border-destructive focus-visible:ring-destructive")}
+                    value={form.dateOfJoining} 
+                    onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })} 
+                  />
+                </div>
+                {errors.dateOfJoining && <p className="text-xs text-destructive font-medium">{errors.dateOfJoining}</p>}
               </div>
 
               <div className="space-y-2">
