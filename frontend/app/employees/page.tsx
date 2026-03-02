@@ -35,6 +35,7 @@ export default function EmployeesPage() {
   const [departmentsData, setDepartmentsData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [deleting, setDeleting] = useState<boolean>(false);
+  const [resetting, setResetting] = useState<boolean>(false);
 
   useEffect(() => {
     setLoading(true);
@@ -81,6 +82,19 @@ export default function EmployeesPage() {
       setDeleting(false);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!selectedId) return;
+    const pwd = typeof window !== "undefined" ? window.prompt("Enter new password (min 6 chars):", "") : "";
+    if (!pwd || pwd.length < 6) return;
+    setResetting(true);
+    try {
+      await api.employees.resetPassword(selectedId, pwd);
+      // no UI change necessary
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -279,6 +293,14 @@ export default function EmployeesPage() {
                          <Edit className="h-4 w-4 mr-2" /> Edit Profile
                        </Button>
                      </Link>
+                     <Button 
+                       variant="outline" 
+                       size="sm"
+                       onClick={handleResetPassword}
+                       disabled={resetting}
+                     >
+                       {resetting ? "Resetting..." : "Reset Password"}
+                     </Button>
                      <Button 
                        variant="outline" 
                        size="sm" 

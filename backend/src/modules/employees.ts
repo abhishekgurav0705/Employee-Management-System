@@ -87,4 +87,23 @@ router.delete("/:id", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(asyn
   res.status(204).end();
 }));
 
+// Admin/HR can reset employee's login password
+router.patch("/:id/password", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (req: Request, res: Response) => {
+  const parsed = z.object({ password: z.string().min(6) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+  const { password } = parsed.data;
+  const employee = await prisma.employee.update({
+    where: { id: req.params.id },
+    data: {
+      user: {
+        update: {
+          passwordHash: bcrypt.hashSync(password, 10)
+        }
+      }
+    },
+    include: { user: true }
+  });
+  res.json({ ok: true, employeeId: employee.id });
+}));
+
 export default router;

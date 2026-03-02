@@ -73,7 +73,9 @@ export const api = {
     get: (id: string) => request(`/api/employees/${id}`),
     create: (data: any) => request("/api/employees", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/api/employees/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    remove: (id: string) => request(`/api/employees/${id}`, { method: "DELETE" })
+    remove: (id: string) => request(`/api/employees/${id}`, { method: "DELETE" }),
+    resetPassword: (id: string, password: string) =>
+      request(`/api/employees/${id}/password`, { method: "PATCH", body: JSON.stringify({ password }) })
   },
   departments: {
     list: () => request("/api/departments"),
