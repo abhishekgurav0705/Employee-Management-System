@@ -1,4 +1,4 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("ems_token") : null;
@@ -7,6 +7,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(init.headers || {})
   };
+  if (!API_BASE) throw new Error("API base URL missing");
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   if (res.status === 401 || res.status === 403) {
     if (typeof window !== "undefined") window.location.href = "/login";

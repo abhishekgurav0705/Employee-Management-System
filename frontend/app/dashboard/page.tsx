@@ -19,10 +19,13 @@ export default function DashboardPage() {
       api.employees.list().catch(() => []),
       api.leaves.pending().catch(() => []),
       api.departments.list().catch(() => [])
-    ]).then(([empRes, leavesRes, deptRes]) => {
-      setEmployees((empRes.employees ?? empRes) || []);
-      setLeaves((leavesRes.requests ?? leavesRes) || []);
-      setDepartments((deptRes.departments ?? deptRes) || []);
+    ]).then(([empRes, leavesRes, deptRes]: any[]) => {
+      const emps = (empRes?.employees ?? empRes);
+      const reqs = (leavesRes?.requests ?? leavesRes);
+      const depts = (deptRes?.departments ?? deptRes);
+      setEmployees(Array.isArray(emps) ? emps : []);
+      setLeaves(Array.isArray(reqs) ? reqs : []);
+      setDepartments(Array.isArray(depts) ? depts : []);
       setTodayAttendance(42);
     });
   }, []);
