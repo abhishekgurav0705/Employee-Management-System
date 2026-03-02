@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
-import { currentUser } from "../../lib/mock";
+import { useAuth } from "../../lib/auth";
 import { DropdownMenu, DropdownTrigger, DropdownItem, DropdownContent } from "../ui/dropdown-menu";
 import { Bell } from "lucide-react";
 
 export function Topbar() {
+  const { user, logout } = useAuth();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container-fluid h-14 flex items-center justify-between">
@@ -20,18 +21,18 @@ export function Topbar() {
             <DropdownTrigger asChild>
               <button className="flex items-center gap-3 rounded-md p-1 hover:bg-muted">
                 <div className="h-8 w-8 rounded-full bg-muted overflow-hidden">
-                  <Image src="/avatar.svg" alt={currentUser.name} width={32} height={32} />
+                  <Image src="/avatar.svg" alt={user?.name ?? "User"} width={32} height={32} />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm">{currentUser.name}</div>
-                  <div className="text-xs text-secondary">{currentUser.role.toUpperCase()}</div>
+                  <div className="text-sm">{user?.name ?? user?.email ?? "User"}</div>
+                  <div className="text-xs text-secondary">{String(user?.role ?? "").toUpperCase()}</div>
                 </div>
               </button>
             </DropdownTrigger>
             <DropdownContent>
               <DropdownItem>My Profile</DropdownItem>
               <DropdownItem>Settings</DropdownItem>
-              <DropdownItem>Sign out</DropdownItem>
+              <DropdownItem onClick={logout}>Sign out</DropdownItem>
             </DropdownContent>
           </DropdownMenu>
         </div>

@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useAuth } from "../lib/auth";
-import { Card, CardContent, CardHeader } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { ToastRoot, ToastTitle, ToastDescription } from "../components/ui/toast";
+import { useAuth } from "../../lib/auth";
+import { Card, CardContent, CardHeader } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { ToastRoot, ToastTitle, ToastDescription } from "../../components/ui/toast";
 
-export default function LoginPage() {
+export default function LoginAliasPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

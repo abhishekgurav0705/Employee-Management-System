@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
-import { currentUser } from "../../lib/mock";
-import { Role } from "../../lib/types";
+import { useAuth } from "../../lib/auth";
 import { cn } from "../../lib/utils";
-import { Users, Building2, CalendarDays, Clock, Activity, Settings, LayoutDashboard, UserCheck, FileCheck, BarChart3 } from "lucide-react";
+import { Users, Building2, CalendarDays, Clock, Activity, Settings, LayoutDashboard, UserCheck, FileCheck } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
-function itemsForRole(role: Role): NavItem[] {
-  if (role === "admin" || role === "hr") {
+function itemsForRole(role: string): NavItem[] {
+  const r = String(role ?? "").toUpperCase();
+  if (r === "ADMIN") {
     return [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Employees", href: "/employees", icon: Users },
@@ -17,15 +17,6 @@ function itemsForRole(role: Role): NavItem[] {
       { label: "Attendance", href: "/attendance", icon: Clock },
       { label: "Activity Log", href: "/activity-log", icon: Activity },
       { label: "Settings", href: "/settings", icon: Settings }
-    ];
-  }
-  if (role === "manager") {
-    return [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "My Team", href: "/employees", icon: Users },
-      { label: "Approvals", href: "/leave/approvals", icon: FileCheck },
-      { label: "Attendance", href: "/attendance", icon: Clock },
-      { label: "Reports", href: "/dashboard", icon: BarChart3 }
     ];
   }
   return [
@@ -37,7 +28,8 @@ function itemsForRole(role: Role): NavItem[] {
 }
 
 export function Sidebar() {
-  const items = itemsForRole(currentUser.role);
+  const { user } = useAuth();
+  const items = itemsForRole(user?.role ?? "EMPLOYEE");
   return (
     <aside className="hidden lg:block w-64 border-r border-border bg-background">
       <div className="px-4 py-4">

@@ -1,24 +1,46 @@
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
-import { activityLogs, employees, leaves, departments } from "../../lib/mock";
 import { Badge } from "../../components/ui/badge";
 import { formatDate } from "../../lib/utils";
+import { useAuth } from "../../lib/auth";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [todayAttendance, setTodayAttendance] = useState<number>(0);
+
+  useEffect(() => {
+    // Basic dashboard data load
+    Promise.all([
+      api.employees.list().catch(() => []),
+      api.leaves.pending().catch(() => []),
+      api.departments.list().catch(() => [])
+    ]).then(([empRes, leavesRes, deptRes]) => {
+      setEmployees((empRes.employees ?? empRes) || []);
+      setLeaves((leavesRes.requests ?? leavesRes) || []);
+      setDepartments((deptRes.departments ?? deptRes) || []);
+      setTodayAttendance(42);
+    });
+  }, []);
+
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(e => e.status === "Active").length;
-  const pendingLeaves = leaves.filter(l => l.status === "Pending").length;
-  const todayAttendance = 42;
+  const activeEmployees = employees.filter((e) => (e.status ?? "ACTIVE").toUpperCase() === "ACTIVE").length;
+  const pendingLeaves = leaves.filter((l) => (l.status ?? "PENDING").toUpperCase() === "PENDING").length;
 
   const leavesByType = Object.entries(
     leaves.reduce<Record<string, number>>((acc, l) => {
-      acc[l.type] = (acc[l.type] ?? 0) + 1;
+      const type = l.type ?? "Other";
+      acc[type] = (acc[type] ?? 0) + 1;
       return acc;
     }, {})
   );
 
   const deptDistribution = Object.entries(
     employees.reduce<Record<string, number>>((acc, e) => {
-      const d = departments.find(d => d.id === e.departmentId)?.name ?? "Unknown";
+      const d = departments.find((d) => d.id === e.departmentId)?.name ?? "Unknown";
       acc[d] = (acc[d] ?? 0) + 1;
       return acc;
     }, {})
@@ -28,6 +50,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="page-header">
         <h1 className="text-xl font-semibold">Dashboard</h1>
+        <Badge>{String(user?.role ?? "").toUpperCase() || "EMPLOYEE"}</Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -60,7 +83,7 @@ export default function DashboardPage() {
                 <div key={type} className="flex items-center gap-3">
                   <span className="w-24 text-sm">{type}</span>
                   <div className="h-2 w-full rounded bg-muted">
-                    <div className="h-2 rounded bg-primary" style={{ width: `${(count / leaves.length) * 100}%` }} />
+                    <div className="h-2 rounded bg-primary" style={{ width: `${leaves.length ? (count / leaves.length) * 100 : 0}%` }} />
                   </div>
                   <span className="text-sm text-secondary">{count}</span>
                 </div>
@@ -78,7 +101,7 @@ export default function DashboardPage() {
                 <div key={dept} className="flex items-center gap-3">
                   <span className="w-32 text-sm">{dept}</span>
                   <div className="h-2 w-full rounded bg-muted">
-                    <div className="h-2 rounded bg-secondary" style={{ width: `${(count / employees.length) * 100}%` }} />
+                    <div className="h-2 rounded bg-secondary" style={{ width: `${employees.length ? (count / employees.length) * 100 : 0}%` }} />
                   </div>
                   <span className="text-sm text-secondary">{count}</span>
                 </div>
@@ -92,15 +115,8 @@ export default function DashboardPage() {
         <CardHeader className="text-sm text-secondary">Recent Activity</CardHeader>
         <CardContent>
           <ul className="divide-y divide-border">
-            {activityLogs.map((log) => (
-              <li key={log.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <div className="text-sm">{log.action} - {log.target}</div>
-                  <div className="text-xs text-secondary">{formatDate(log.timestamp)}</div>
-                </div>
-                <Badge variant="default">Log</Badge>
-              </li>
-            ))}
+            {/* Activity logs will be wired after backend endpoint alignment */}
+            <li className="py-3 text-secondary">No recent activity yet</li>
           </ul>
         </CardContent>
       </Card>
