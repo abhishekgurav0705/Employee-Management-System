@@ -18,12 +18,14 @@ const createSchema = z.object({
   reason: z.string().optional()
 });
 
-async function resolveEmployeeId(req: Request & { user?: { id: string } }, provided?: string) {
+async function resolveEmployeeId(req: Request & { user?: { id: string; email?: string } }, provided?: string) {
   if (provided) return provided;
-  if (!req.user?.id) throw new Error("unauthorized");
-  const employee = await prisma.employee.findFirst({ where: { userId: req.user.id } });
-  if (!employee) throw new Error("employee_not_found");
-  return employee.id;
+  if (!req.user?.id) return null;
+  let employee = await prisma.employee.findFirst({ where: { userId: req.user.id } });
+  if (!employee && req.user.email) {
+    employee = await prisma.employee.findFirst({ where: { email: req.user.email } });
+  }
+  return employee?.id ?? null;
 }
 
 async function resolveLeaveTypeId(type?: string, providedId?: string) {
@@ -46,6 +48,7 @@ router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) =
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
   const employeeId = await resolveEmployeeId(req as any, parsed.data.employeeId);
+  if (!employeeId) return res.status(404).json({ error: "no_employee_link" });
   const leaveTypeId = await resolveLeaveTypeId(parsed.data.type, parsed.data.leaveTypeId);
   const request = await prisma.leaveRequest.create({ 
     data: { 
