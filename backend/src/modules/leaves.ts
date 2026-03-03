@@ -68,18 +68,59 @@ router.get("/my", requireAuth, asyncHandler(async (req: Request & { user?: { id:
 }));
 
 router.get("/pending", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (_req: Request, res: Response) => {
-  const requests = await prisma.leaveRequest.findMany({ where: { status: "PENDING" }, include: { leaveType: true } });
+  const rows = await prisma.leaveRequest.findMany({ 
+    where: { status: "PENDING" }, 
+    include: { leaveType: true, employee: true }
+  });
+  // Shape data to match frontend expectations
+  const requests = rows.map((r) => ({
+    ...r,
+    type: r.leaveType?.name ?? "ANNUAL",
+    employee: r.employee ? {
+      id: r.employee.id,
+      name: `${r.employee.firstName} ${r.employee.lastName}`.trim(),
+      email: r.employee.email
+    } : null
+  }));
   res.json({ requests });
 }));
 
 router.patch("/:id/approve", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const request = await prisma.leaveRequest.update({ where: { id: req.params.id }, data: { status: "APPROVED", approvedByEmployeeId: req.user!.id } });
-  res.json({ request });
+  const approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
+  if (!approver) return res.status(400).json({ error: "approver_not_found" });
+  const request = await prisma.leaveRequest.update({ 
+    where: { id: req.params.id }, 
+    data: { status: "APPROVED", approvedByEmployeeId: approver.id },
+    include: { leaveType: true, employee: true }
+  });
+  res.json({ request: {
+    ...request,
+    type: request.leaveType?.name ?? "ANNUAL",
+    employee: request.employee ? {
+      id: request.employee.id,
+      name: `${request.employee.firstName} ${request.employee.lastName}`.trim(),
+      email: request.employee.email
+    } : null
+  }});
 }));
 
 router.patch("/:id/reject", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const request = await prisma.leaveRequest.update({ where: { id: req.params.id }, data: { status: "REJECTED", approvedByEmployeeId: req.user!.id } });
-  res.json({ request });
+  const approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
+  if (!approver) return res.status(400).json({ error: "approver_not_found" });
+  const request = await prisma.leaveRequest.update({ 
+    where: { id: req.params.id }, 
+    data: { status: "REJECTED", approvedByEmployeeId: approver.id },
+    include: { leaveType: true, employee: true }
+  });
+  res.json({ request: {
+    ...request,
+    type: request.leaveType?.name ?? "ANNUAL",
+    employee: request.employee ? {
+      id: request.employee.id,
+      name: `${request.employee.firstName} ${request.employee.lastName}`.trim(),
+      email: request.employee.email
+    } : null
+  }});
 }));
 
 export default router;
