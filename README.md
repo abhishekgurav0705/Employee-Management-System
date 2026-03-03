@@ -1,22 +1,21 @@
 # 🏢 EMS Pro — Modern Employee Management System
 
-EMS Pro is a production‑ready Employee Management System for HR teams and growing organizations. It streamlines employee onboarding, leave management, attendance tracking, and audit logging — delivered in a clean, SaaS‑style interface.
+EMS Pro is a production‑ready HR platform for growing organizations. It streamlines onboarding, employee profiles, departments, leave management, attendance tracking, and audit logging — delivered in a clean, SaaS‑style interface designed for both administrators and employees.
 
-## 🚀 Highlights
-
-- Role‑based access control (RBAC) for Admin, HR, Manager, Employee
-- Stable authentication and sessions for all roles
-- Modern dashboard with KPIs and recent activity
-- Clear separation of frontend (Next.js) and backend (Express + Prisma)
-
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
 - Frontend: Next.js 14 (App Router), TypeScript, Tailwind CSS, Lucide React icons
 - Backend: Node.js (Express), TypeScript, Prisma ORM
 - Database: PostgreSQL
 - Authentication: JWT stored in localStorage (stable session handling)
 
-## 📂 Project Structure
+High‑level architecture:
+- Frontend (Next.js) calls the Backend via REST under /api/*
+- Backend (Express) exposes modules: auth, employees, departments, leaves, attendance, activity‑logs
+- Database managed via Prisma schema and migrations
+- Deployed on Render (frontend and backend services)
+
+## 📂 Folder Structure
 
 ```text
 .
@@ -32,7 +31,7 @@ EMS Pro is a production‑ready Employee Management System for HR teams and grow
 └── README.md           # You are here
 ```
 
-## ⚙️ Local Setup
+## ⚙️ Local Development
 
 ### Prerequisites
 - Node.js v18+
@@ -115,7 +114,7 @@ This project is optimized for deployment on [Render.com](https://render.com).
 - **Admin Access**: `admin@example.com` / `Password123!`
 - **Employee Access**: `employee@example.com` / `Password123!`
 
-## ✅ Production Readiness
+## ✅ Production Notes
 
 - Stable EMPLOYEE/ADMIN sessions (logout only on 401 or explicit action)
 - Role‑aware routing and permissions
@@ -123,9 +122,8 @@ This project is optimized for deployment on [Render.com](https://render.com).
 - Consistent UI with loading/empty states and toasts
 
 ## 🤝 Credits
-
-**Lead Developer**: [Abhishek Gurav](https://github.com/abhishekgurav0705)  
-**Helping Hand**: Ram Gawas — https://ramgawas55.in
+- **Lead Developer**: [Abhishek Gurav](https://github.com/abhishekgurav0705)  
+- **Helping Hand**: RAM GAWAS — https://ramgawas55.in
 
 ---
 Built with ❤️ for better workplaces.
