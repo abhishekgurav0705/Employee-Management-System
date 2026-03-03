@@ -88,12 +88,14 @@ router.get("/pending", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), async
   res.json({ requests });
 }));
 
-router.patch("/:id/approve", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
-  if (!approver) return res.status(400).json({ error: "approver_not_found" });
+router.patch("/:id/approve", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string; email?: string } }, res: Response) => {
+  let approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
+  if (!approver && req.user?.email) {
+    approver = await prisma.employee.findFirst({ where: { email: req.user.email } });
+  }
   const request = await prisma.leaveRequest.update({ 
     where: { id: req.params.id }, 
-    data: { status: "APPROVED", approvedByEmployeeId: approver.id },
+    data: { status: "APPROVED", approvedByEmployeeId: approver?.id ?? null },
     include: { leaveType: true, employee: true }
   });
   res.json({ request: {
@@ -107,12 +109,14 @@ router.patch("/:id/approve", requireAuth, requireRole("ADMIN", "HR", "MANAGER"),
   }});
 }));
 
-router.patch("/:id/reject", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
-  if (!approver) return res.status(400).json({ error: "approver_not_found" });
+router.patch("/:id/reject", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (req: Request & { user?: { id: string; email?: string } }, res: Response) => {
+  let approver = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
+  if (!approver && req.user?.email) {
+    approver = await prisma.employee.findFirst({ where: { email: req.user.email } });
+  }
   const request = await prisma.leaveRequest.update({ 
     where: { id: req.params.id }, 
-    data: { status: "REJECTED", approvedByEmployeeId: approver.id },
+    data: { status: "REJECTED", approvedByEmployeeId: approver?.id ?? null },
     include: { leaveType: true, employee: true }
   });
   res.json({ request: {
