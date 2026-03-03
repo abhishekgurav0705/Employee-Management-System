@@ -8,24 +8,62 @@ const router = Router();
 const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
+// Accept either (employeeId + leaveTypeId) or infer from auth and type name
 const createSchema = z.object({
-  employeeId: z.string(),
-  leaveTypeId: z.string(),
+  employeeId: z.string().optional(),
+  leaveTypeId: z.string().optional(),
+  type: z.string().optional(), // e.g., "ANNUAL" | "SICK" | "UNPAID" | "OTHER"
   startDate: z.string(),
   endDate: z.string(),
   reason: z.string().optional()
 });
 
+async function resolveEmployeeId(req: Request & { user?: { id: string } }, provided?: string) {
+  if (provided) return provided;
+  if (!req.user?.id) throw new Error("unauthorized");
+  const employee = await prisma.employee.findFirst({ where: { userId: req.user.id } });
+  if (!employee) throw new Error("employee_not_found");
+  return employee.id;
+}
+
+async function resolveLeaveTypeId(type?: string, providedId?: string) {
+  if (providedId) return providedId;
+  const nameMap: Record<string, string> = {
+    ANNUAL: "Annual",
+    SICK: "Sick",
+    UNPAID: "Unpaid",
+    OTHER: "Other"
+  };
+  const targetName = type ? (nameMap[type.toUpperCase()] ?? type) : "Annual";
+  let lt = await prisma.leaveType.findFirst({ where: { name: { equals: targetName, mode: "insensitive" } } });
+  if (!lt) {
+    lt = await prisma.leaveType.create({ data: { name: targetName } });
+  }
+  return lt.id;
+}
+
 router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
-  const request = await prisma.leaveRequest.create({ data: { ...parsed.data, status: "PENDING" } });
+  const employeeId = await resolveEmployeeId(req as any, parsed.data.employeeId);
+  const leaveTypeId = await resolveLeaveTypeId(parsed.data.type, parsed.data.leaveTypeId);
+  const request = await prisma.leaveRequest.create({ 
+    data: { 
+      employeeId,
+      leaveTypeId,
+      startDate: new Date(parsed.data.startDate),
+      endDate: new Date(parsed.data.endDate),
+      reason: parsed.data.reason,
+      status: "PENDING" 
+    } 
+  });
   res.status(201).json({ request });
 }));
 
 router.get("/my", requireAuth, asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const employeeId = req.user!.id;
-  const requests = await prisma.leaveRequest.findMany({ where: { employeeId }, include: { leaveType: true } });
+  const employee = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
+  if (!employee) return res.json({ requests: [] });
+  const requests = await prisma.leaveRequest.findMany({ where: { employeeId: employee.id }, include: { leaveType: true } });
   res.json({ requests });
 }));
 
