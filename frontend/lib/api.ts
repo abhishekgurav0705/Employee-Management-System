@@ -76,6 +76,7 @@ export const api = {
   employees: {
     list: () => request("/api/employees"),
     get: (id: string) => request(`/api/employees/${id}`),
+    me: () => request("/api/employees/me"),
     create: (data: any) => request("/api/employees", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/api/employees/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     remove: (id: string) => request(`/api/employees/${id}`, { method: "DELETE" }),
