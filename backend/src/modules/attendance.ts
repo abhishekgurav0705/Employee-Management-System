@@ -28,8 +28,8 @@ router.post("/check-in", requireAuth, asyncHandler(async (req: Request & { user?
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
   const employeeId = (await resolveEmployeeIdFromUser(req)) ?? parsed.data.employeeId;
   if (!employeeId) return res.status(404).json({ error: "no_employee_link" });
-  const date = parsed.data.date ?? new Date().toISOString();
-  const record = await prisma.attendance.create({ data: { employeeId, date, checkInTime: new Date().toISOString() } });
+  const day = (parsed.data.date ? new Date(parsed.data.date) : new Date()).toISOString().slice(0, 10);
+  const record = await prisma.attendance.create({ data: { employeeId, date: day, checkInTime: new Date().toISOString() } });
   res.status(201).json({ record });
 }));
 
@@ -38,9 +38,9 @@ router.post("/check-out", requireAuth, asyncHandler(async (req: Request & { user
   if (!parsed.success) return res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
   const employeeId = (await resolveEmployeeIdFromUser(req)) ?? parsed.data.employeeId;
   if (!employeeId) return res.status(404).json({ error: "no_employee_link" });
-  const date = parsed.data.date ?? new Date().toISOString();
+  const day = (parsed.data.date ? new Date(parsed.data.date) : new Date()).toISOString().slice(0, 10);
   const record = await prisma.attendance.updateMany({
-    where: { employeeId, date },
+    where: { employeeId, date: day },
     data: { checkOutTime: new Date().toISOString() }
   });
   res.json({ updated: record.count });

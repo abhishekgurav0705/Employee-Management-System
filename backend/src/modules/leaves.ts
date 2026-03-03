@@ -65,9 +65,13 @@ router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) =
 
 router.get("/my", requireAuth, asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
   const employee = await prisma.employee.findFirst({ where: { userId: req.user!.id } });
-  if (!employee) return res.json({ requests: [] });
-  const requests = await prisma.leaveRequest.findMany({ where: { employeeId: employee.id }, include: { leaveType: true } });
-  res.json({ requests });
+  if (!employee) return res.json({ leaves: [] });
+  const rows = await prisma.leaveRequest.findMany({ where: { employeeId: employee.id }, include: { leaveType: true } });
+  const leaves = rows.map((r) => ({
+    ...r,
+    type: r.leaveType?.name ?? "Annual"
+  }));
+  res.json({ leaves });
 }));
 
 router.get("/pending", requireAuth, requireRole("ADMIN", "HR", "MANAGER"), asyncHandler(async (_req: Request, res: Response) => {
