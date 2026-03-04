@@ -4,9 +4,58 @@ import { DropdownMenu, DropdownTrigger, DropdownItem, DropdownContent } from "..
 import { Bell, User, Settings, LogOut, Search, Menu } from "lucide-react";
 import { Input } from "../ui/input";
 import Link from "next/link";
+import React from "react";
+import { api } from "../../lib/api";
+import { formatDate } from "../../lib/utils";
 
 export function Topbar() {
   const { user, logout } = useAuth();
+  const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [items, setItems] = React.useState<Array<{ id: string; action: string; createdAt?: string; timestamp?: string; target?: string }>>([]);
+  const role = String(user?.role ?? "EMPLOYEE").toUpperCase();
+  const canView = role === "ADMIN" || role === "HR";
+
+  React.useEffect(() => {
+    if (!open || !canView) return;
+    let cancelled = false;
+    setLoading(true);
+    api.activityLogs
+      .list()
+      .then((res: any) => {
+        if (cancelled) return;
+        const logs = Array.isArray(res) ? res : res.logs || [];
+        if (logs.length > 0) {
+          setItems(logs.slice(0, 8));
+        } else {
+          return api.leaves
+            .pending()
+            .then((p: any) => {
+              if (cancelled) return;
+              const reqs = (p?.requests || []).map((r: any) => ({
+                id: r.id,
+                action: `Leave request from ${r?.employee?.name || "Employee"} (${r.type})`,
+                createdAt: r.createdAt,
+                target: r.employee?.email || ""
+              }));
+              setItems(reqs.slice(0, 8));
+            })
+            .catch(() => {
+              if (!cancelled) setItems([]);
+            });
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, canView]);
   
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -26,10 +75,44 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <button className="relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors" aria-label="Notifications">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive border-2 border-background" />
-          </button>
+          <DropdownMenu>
+            <DropdownTrigger asChild>
+              <button
+                onClick={() => setOpen((o) => !o)}
+                className="relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                {canView && items.length > 0 && (
+                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive border-2 border-background" />
+                )}
+              </button>
+            </DropdownTrigger>
+            <DropdownContent align="end" className="w-80 p-0">
+              <div className="px-3 py-2 border-b">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notifications</p>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {!canView ? (
+                  <div className="p-3 text-sm text-muted-foreground">Notifications are not available for your role.</div>
+                ) : loading ? (
+                  <div className="p-3 text-sm text-muted-foreground">Loading…</div>
+                ) : items.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground">No recent activity.</div>
+                ) : (
+                  items.map((n) => (
+                    <div key={n.id} className="px-3 py-2 hover:bg-muted/60">
+                      <div className="text-sm">{n.action || "Activity"}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {n.target ? `Target: ${n.target} • ` : ""}
+                        {(n.createdAt || n.timestamp) ? formatDate(String(n.createdAt || n.timestamp)) : ""}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </DropdownContent>
+          </DropdownMenu>
           
           <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 

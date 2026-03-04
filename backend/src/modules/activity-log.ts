@@ -8,7 +8,15 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 router.get("/", requireAuth, requireRole("ADMIN", "HR"), asyncHandler(async (_req: Request, res: Response) => {
-  const logs = await prisma.activityLog.findMany({ orderBy: { createdAt: "desc" } });
+  const rows = await prisma.activityLog.findMany({ include: { actor: true }, orderBy: { createdAt: "desc" } });
+  const logs = rows.map((l) => ({
+    id: l.id,
+    action: l.action,
+    timestamp: l.createdAt,
+    actor: { name: l.actor.email },
+    target: `${l.targetType}:${l.targetId}`,
+    metadata: l.metadata ?? null
+  }));
   res.json({ logs });
 }));
 

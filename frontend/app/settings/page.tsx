@@ -102,6 +102,36 @@ export default function SettingsPage() {
 }
 
 function OrganizationSettings({ onSave }: { onSave: (t: string, d: string) => void }) {
+  const [companyName, setCompanyName] = useState("Acme Corp");
+  const [brandColor, setBrandColor] = useState("#3b82f6");
+  const [timezone, setTimezone] = useState("UTC (GMT+00:00)");
+  const [workWeek, setWorkWeek] = useState("Monday - Friday");
+  const [startOfWeek, setStartOfWeek] = useState("Monday");
+
+  React.useEffect(() => {
+    try {
+      const s = localStorage.getItem("ems_settings_org");
+      if (s) {
+        const v = JSON.parse(s);
+        if (v.companyName) setCompanyName(v.companyName);
+        if (v.brandColor) setBrandColor(v.brandColor);
+        if (v.timezone) setTimezone(v.timezone);
+        if (v.workWeek) setWorkWeek(v.workWeek);
+        if (v.startOfWeek) setStartOfWeek(v.startOfWeek);
+      }
+    } catch {}
+  }, []);
+
+  const save = () => {
+    try {
+      localStorage.setItem(
+        "ems_settings_org",
+        JSON.stringify({ companyName, brandColor, timezone, workWeek, startOfWeek })
+      );
+    } catch {}
+    onSave("Settings Saved", "Organization profile has been updated.");
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -112,7 +142,7 @@ function OrganizationSettings({ onSave }: { onSave: (t: string, d: string) => vo
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Company Name</label>
-            <Input defaultValue="Acme Corp" />
+            <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Company Logo</label>
@@ -126,36 +156,36 @@ function OrganizationSettings({ onSave }: { onSave: (t: string, d: string) => vo
           <div className="space-y-2">
             <label className="text-sm font-medium">Primary Brand Color</label>
             <div className="flex gap-2">
-              <Input defaultValue="#3b82f6" className="font-mono" />
-              <div className="h-10 w-10 rounded border border-border" style={{ backgroundColor: "#3b82f6" }} />
+              <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="font-mono" />
+              <div className="h-10 w-10 rounded border border-border" style={{ backgroundColor: brandColor }} />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Timezone</label>
-            <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-              <option>UTC (GMT+00:00)</option>
-              <option>EST (GMT-05:00)</option>
-              <option>IST (GMT+05:30)</option>
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="UTC (GMT+00:00)">UTC (GMT+00:00)</option>
+              <option value="EST (GMT-05:00)">EST (GMT-05:00)</option>
+              <option value="IST (GMT+05:30)">IST (GMT+05:30)</option>
             </select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Default Work Week</label>
-            <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-              <option>Monday - Friday</option>
-              <option>Monday - Saturday</option>
-              <option>Sunday - Thursday</option>
+            <select value={workWeek} onChange={(e) => setWorkWeek(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="Monday - Friday">Monday - Friday</option>
+              <option value="Monday - Saturday">Monday - Saturday</option>
+              <option value="Sunday - Thursday">Sunday - Thursday</option>
             </select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Start of Week</label>
-            <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-              <option>Monday</option>
-              <option>Sunday</option>
+            <select value={startOfWeek} onChange={(e) => setStartOfWeek(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="Monday">Monday</option>
+              <option value="Sunday">Sunday</option>
             </select>
           </div>
         </div>
         <div className="pt-4">
-          <Button onClick={() => onSave("Settings Saved", "Organization profile has been updated.")}>
+          <Button onClick={save}>
             <Save className="h-4 w-4 mr-2" /> Save Changes
           </Button>
         </div>
@@ -165,6 +195,30 @@ function OrganizationSettings({ onSave }: { onSave: (t: string, d: string) => vo
 }
 
 function WorkHoursSettings({ onSave }: { onSave: (t: string, d: string) => void }) {
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("18:00");
+  const [grace, setGrace] = useState("15");
+  const [halfDay, setHalfDay] = useState("4");
+
+  React.useEffect(() => {
+    try {
+      const s = localStorage.getItem("ems_settings_hours");
+      if (s) {
+        const v = JSON.parse(s);
+        if (v.startTime) setStartTime(v.startTime);
+        if (v.endTime) setEndTime(v.endTime);
+        if (v.grace) setGrace(String(v.grace));
+        if (v.halfDay) setHalfDay(String(v.halfDay));
+      }
+    } catch {}
+  }, []);
+
+  const save = () => {
+    try {
+      localStorage.setItem("ems_settings_hours", JSON.stringify({ startTime, endTime, grace: Number(grace), halfDay: Number(halfDay) }));
+    } catch {}
+    onSave("Settings Saved", "Work hours and attendance rules updated.");
+  };
   return (
     <Card>
       <CardHeader>
@@ -178,11 +232,11 @@ function WorkHoursSettings({ onSave }: { onSave: (t: string, d: string) => void 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Start Time</label>
-                <Input type="time" defaultValue="09:00" />
+                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">End Time</label>
-                <Input type="time" defaultValue="18:00" />
+                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
               </div>
             </div>
           </div>
@@ -190,16 +244,16 @@ function WorkHoursSettings({ onSave }: { onSave: (t: string, d: string) => void 
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Rules</h3>
             <div className="space-y-2">
               <label className="text-sm font-medium">Grace Period (Minutes)</label>
-              <Input type="number" defaultValue="15" />
+              <Input type="number" value={grace} onChange={(e) => setGrace(e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Half-day Threshold (Hours)</label>
-              <Input type="number" defaultValue="4" />
+              <Input type="number" value={halfDay} onChange={(e) => setHalfDay(e.target.value)} />
             </div>
           </div>
         </div>
         <div className="pt-4">
-          <Button onClick={() => onSave("Settings Saved", "Work hours and attendance rules updated.")}>
+          <Button onClick={save}>
             <Save className="h-4 w-4 mr-2" /> Save Rules
           </Button>
         </div>
@@ -209,10 +263,40 @@ function WorkHoursSettings({ onSave }: { onSave: (t: string, d: string) => void 
 }
 
 function LeavePolicySettings({ onSave }: { onSave: (t: string, d: string) => void }) {
-  const [holidays, setHolidays] = useState([
-    { id: 1, name: "New Year's Day", date: "2026-01-01" },
-    { id: 2, name: "Independence Day", date: "2026-08-15" },
+  const [holidays, setHolidays] = useState<Array<{ id: number; name: string; date: string }>>([]);
+  const [quota, setQuota] = useState([
+    { type: "Casual Leave", quota: 12 },
+    { type: "Sick Leave", quota: 8 },
+    { type: "Paid Leave", quota: 15 },
   ]);
+
+  React.useEffect(() => {
+    try {
+      const s = localStorage.getItem("ems_settings_leave");
+      if (s) {
+        const v = JSON.parse(s);
+        if (Array.isArray(v.quota)) setQuota(v.quota);
+        if (Array.isArray(v.holidays)) setHolidays(v.holidays);
+      } else {
+        setHolidays([
+          { id: 1, name: "New Year's Day", date: "2026-01-01" },
+          { id: 2, name: "Independence Day", date: "2026-08-15" },
+        ]);
+      }
+    } catch {
+      setHolidays([
+        { id: 1, name: "New Year's Day", date: "2026-01-01" },
+        { id: 2, name: "Independence Day", date: "2026-08-15" },
+      ]);
+    }
+  }, []);
+
+  const save = () => {
+    try {
+      localStorage.setItem("ems_settings_leave", JSON.stringify({ quota, holidays }));
+    } catch {}
+    onSave("Settings Saved", "Leave policy and calendar updated.");
+  };
 
   return (
     <div className="space-y-6">
@@ -223,15 +307,20 @@ function LeavePolicySettings({ onSave }: { onSave: (t: string, d: string) => voi
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           <div className="space-y-3">
-            {[
-              { type: "Casual Leave", quota: 12 },
-              { type: "Sick Leave", quota: 8 },
-              { type: "Paid Leave", quota: 15 },
-            ].map((item) => (
+            {quota.map((item, idx) => (
               <div key={item.type} className="flex items-center justify-between p-3 border rounded-md">
                 <span className="font-medium">{item.type}</span>
                 <div className="flex items-center gap-3">
-                  <Input type="number" defaultValue={item.quota} className="w-20" />
+                  <Input
+                    type="number"
+                    value={item.quota}
+                    onChange={(e) => {
+                      const next = [...quota];
+                      next[idx] = { ...item, quota: Number(e.target.value) };
+                      setQuota(next);
+                    }}
+                    className="w-20"
+                  />
                   <span className="text-sm text-muted-foreground">days/year</span>
                 </div>
               </div>
@@ -265,6 +354,11 @@ function LeavePolicySettings({ onSave }: { onSave: (t: string, d: string) => voi
           <Button variant="outline" size="sm" className="w-full">
             <Plus className="h-4 w-4 mr-2" /> Add Holiday
           </Button>
+          <div className="pt-4">
+            <Button onClick={save}>
+              <Save className="h-4 w-4 mr-2" /> Save Leave Settings
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -272,6 +366,26 @@ function LeavePolicySettings({ onSave }: { onSave: (t: string, d: string) => voi
 }
 
 function NotificationSettings({ onSave }: { onSave: (t: string, d: string) => void }) {
+  const [prefs, setPrefs] = useState<{ [k: string]: boolean }>({});
+
+  React.useEffect(() => {
+    try {
+      const s = localStorage.getItem("ems_settings_notify");
+      if (s) setPrefs(JSON.parse(s));
+    } catch {}
+  }, []);
+
+  const toggle = (key: string) => {
+    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  };
+
+  const save = () => {
+    try {
+      localStorage.setItem("ems_settings_notify", JSON.stringify(prefs));
+    } catch {}
+    onSave("Preferences Updated", "Your notification settings have been saved.");
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -289,7 +403,12 @@ function NotificationSettings({ onSave }: { onSave: (t: string, d: string) => vo
             ].map((label, i) => (
               <div key={i} className="flex items-center justify-between">
                 <span className="text-sm">{label}</span>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                <input
+                  type="checkbox"
+                  checked={!!prefs[`lr_${i}`]}
+                  onChange={() => toggle(`lr_${i}`)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
               </div>
             ))}
           </div>
@@ -304,12 +423,17 @@ function NotificationSettings({ onSave }: { onSave: (t: string, d: string) => vo
             ].map((label, i) => (
               <div key={i} className="flex items-center justify-between">
                 <span className="text-sm">{label}</span>
-                <input type="checkbox" defaultChecked={i === 0} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                <input
+                  type="checkbox"
+                  checked={!!prefs[`at_${i}`]}
+                  onChange={() => toggle(`at_${i}`)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
               </div>
             ))}
           </div>
         </div>
-        <Button onClick={() => onSave("Preferences Updated", "Your notification settings have been saved.")}>
+        <Button onClick={save}>
           Save Preferences
         </Button>
       </CardContent>
