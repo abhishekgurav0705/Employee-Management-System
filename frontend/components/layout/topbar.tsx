@@ -1,13 +1,14 @@
 "use client";
 import { useAuth } from "../../lib/auth";
 import { DropdownMenu, DropdownTrigger, DropdownItem, DropdownContent } from "../ui/dropdown-menu";
-import { Bell, User, Settings, LogOut, Search, Menu } from "lucide-react";
+import { Bell, User, Settings, LogOut, Search, Menu, LayoutDashboard, Users, Building2, CalendarDays, Clock, Activity, FileCheck, UserCheck } from "lucide-react";
 import { Input } from "../ui/input";
 import Link from "next/link";
 import React from "react";
 import { api } from "../../lib/api";
 import { formatDate } from "../../lib/utils";
 import { ThemeToggle } from "./theme-toggle";
+import { Drawer, DrawerTrigger, DrawerContent, DrawerClose } from "../ui/drawer";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -62,9 +63,46 @@ export function Topbar() {
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1">
-          <button className="lg:hidden p-2 -ml-2 hover:bg-muted rounded-md" aria-label="Toggle Menu">
-            <Menu className="h-5 w-5" />
-          </button>
+          <Drawer>
+            <DrawerTrigger asChild>
+              <button className="lg:hidden p-2 -ml-2 hover:bg-muted rounded-md" aria-label="Toggle Menu">
+                <Menu className="h-5 w-5" />
+              </button>
+            </DrawerTrigger>
+            <DrawerContent side="left" className="w-80">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                    <LayoutDashboard className="h-4 w-4" />
+                  </div>
+                  <span className="font-bold">EMS Pro</span>
+                </div>
+                <ThemeToggle compact />
+              </div>
+              <nav className="py-3 space-y-1">
+                <MobileLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                {String(user?.role ?? "").toUpperCase() !== "EMPLOYEE" ? (
+                  <>
+                    <MobileLink href="/employees" icon={Users} label="Employees" />
+                    <MobileLink href="/departments" icon={Building2} label="Departments" />
+                    <MobileLink href="/leave/approvals" icon={FileCheck} label="Leave Requests" />
+                    <MobileLink href="/activity-log" icon={Activity} label="Activity Log" />
+                  </>
+                ) : (
+                  <MobileLink href="/employees/me" icon={UserCheck} label="My Profile" />
+                )}
+                <MobileLink href="/leave" icon={CalendarDays} label="My Leave" />
+                <MobileLink href="/attendance" icon={Clock} label="Attendance" />
+                <MobileLink href="/settings" icon={Settings} label="Settings" />
+              </nav>
+              <div className="pt-3 border-t border-border">
+                <button onClick={logout} className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            </DrawerContent>
+          </Drawer>
           
           <div className="hidden md:flex relative max-w-sm w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -160,5 +198,14 @@ export function Topbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function MobileLink({ href, icon: Icon, label }: { href: string; icon: React.ComponentType<{ className?: string }>; label: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-sm">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <span>{label}</span>
+    </Link>
   );
 }
