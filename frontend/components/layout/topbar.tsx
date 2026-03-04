@@ -7,6 +7,7 @@ import Link from "next/link";
 import React from "react";
 import { api } from "../../lib/api";
 import { formatDate } from "../../lib/utils";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -75,6 +76,7 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
+          <ThemeToggle compact />
           <DropdownMenu>
             <DropdownTrigger asChild>
               <button

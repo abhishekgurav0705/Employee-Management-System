@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }>; adminOnly?: boolean };
 
@@ -128,6 +129,9 @@ export function Sidebar() {
              <span className="text-[10px] font-bold text-primary">65%</span>
           </div>
           <p className="text-[10px] text-muted-foreground mt-2">Profile completion</p>
+          <div className="mt-3">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </aside>

@@ -14,12 +14,22 @@ body {
   @apply bg-muted text-foreground antialiased;
 }
 
+.dark body {
+  background-color: #0b1220;
+  color: #e6e8ec;
+}
+
 .container-fluid {
   @apply px-4 sm:px-6 lg:px-8;
 }
 
 .card {
   @apply bg-card rounded-lg shadow-soft border border-border;
+}
+
+.dark .card {
+  background-color: #0f172a;
+  border-color: #1e293b;
 }
 
 .page-header {
@@ -32,4 +42,17 @@ body {
 
 .subtle {
   @apply text-sm text-secondary;
+}
+
+.dark .bg-muted {
+  background-color: #0b1424 !important;
+}
+.dark .bg-card {
+  background-color: #0f172a !important;
+}
+.dark .text-muted-foreground {
+  color: #9aa4b2 !important;
+}
+.dark .border-border {
+  border-color: #1e293b !important;
 }
