@@ -38,11 +38,17 @@ router.get("/:id", requireAuth, asyncHandler(async (req: Request, res: Response)
   res.json({ employee });
 }));
 
-router.get("/me", requireAuth, asyncHandler(async (req: Request & { user?: { id: string } }, res: Response) => {
-  const employee = await prisma.employee.findFirst({ 
+router.get("/me", requireAuth, asyncHandler(async (req: Request & { user?: { id: string; email?: string } }, res: Response) => {
+  let employee = await prisma.employee.findFirst({ 
     where: { userId: req.user!.id },
     include: { user: true, department: true }
   });
+  if (!employee && req.user?.email) {
+    employee = await prisma.employee.findFirst({ 
+      where: { email: req.user.email },
+      include: { user: true, department: true }
+    });
+  }
   if (!employee) return res.status(404).json({ error: "not_found" });
   res.json({ employee });
 }));

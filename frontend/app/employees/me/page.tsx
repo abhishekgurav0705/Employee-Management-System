@@ -20,7 +20,16 @@ export default function MyProfilePage() {
       .then((res: any) => {
         setProfile(res.employee ?? res);
       })
-      .catch(() => setProfile(null))
+      .catch(async () => {
+        try {
+          const list = await api.employees.list() as any;
+          const employees = Array.isArray(list) ? list : (list.employees || []);
+          const match = employees.find((e: any) => String(e.email).toLowerCase() === String(user?.email).toLowerCase());
+          setProfile(match ?? null);
+        } catch {
+          setProfile(null);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -35,9 +44,41 @@ export default function MyProfilePage() {
 
   if (!profile) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-muted-foreground">Profile not found.</p>
-        <Button className="mt-4" onClick={logout}>Logout</Button>
+      <div className="max-w-lg mx-auto py-16">
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-8 space-y-4 text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <span className="text-xl font-bold text-muted-foreground">U</span>
+            </div>
+            <h2 className="text-xl font-semibold">Profile not found</h2>
+            <p className="text-sm text-muted-foreground">
+              We couldn't locate an employee profile linked to your account. This usually means your account hasn't been mapped to an employee record yet.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setLoading(true);
+                  api.employees.me()
+                    .then((res: any) => setProfile(res.employee ?? res))
+                    .catch(() => setProfile(null))
+                    .finally(() => setLoading(false));
+                }}
+              >
+                Try Again
+              </Button>
+              <Button onClick={() => (window.location.href = '/dashboard')}>Back to Dashboard</Button>
+            </div>
+            <div className="pt-2">
+              <p className="text-xs text-muted-foreground">
+                If this persists, please contact your administrator to link your user to your employee record.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Button variant="ghost" onClick={logout}>Sign out</Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
