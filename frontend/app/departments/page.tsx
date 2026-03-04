@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogClose } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { api } from "../../lib/api";
-import { Building2, Users, MoreVertical, Plus, Search, Trash2, Edit2, Loader2, Sparkles } from "lucide-react";
+import { Building2, Users, MoreVertical, Plus, Search, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
 import { ToastRoot, ToastTitle, ToastDescription } from "../../components/ui/toast";
 
@@ -55,23 +55,7 @@ export default function DepartmentsPage() {
     }
   }
 
-  async function addDefaults() {
-    const defaults = ["IT", "Sales", "HR"];
-    setIsSubmitting(true);
-    try {
-      for (const n of defaults) {
-        try {
-          await api.departments.create({ name: n });
-        } catch {
-          // ignore duplicates or errors per item
-        }
-      }
-      setToast({ open: true, title: "Departments Added", description: "IT, Sales and HR have been created." });
-      fetchData();
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+  // Removed quick add defaults button for a more professional UX
 
   async function removeDepartment(id: string) {
     const dept = departments.find(d => d.id === id);
@@ -102,9 +86,6 @@ export default function DepartmentsPage() {
           <p className="text-muted-foreground mt-1">Organize your team into functional departments and units.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="shadow" onClick={addDefaults} disabled={isSubmitting}>
-            <Sparkles className="mr-2 h-4 w-4" /> Add IT, Sales, HR
-          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="shadow-lg shadow-primary/20">
@@ -201,10 +182,7 @@ export default function DepartmentsPage() {
           <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
             Get started by creating your first department to organize your team members.
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <Button variant="outline" onClick={addDefaults}>
-              <Sparkles className="mr-2 h-4 w-4" /> Add IT, Sales, HR
-            </Button>
+          <div className="mt-6 flex items-center justify-center">
             <Button onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add First Department
             </Button>
