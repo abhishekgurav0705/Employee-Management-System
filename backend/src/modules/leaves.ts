@@ -102,6 +102,21 @@ router.patch("/:id/approve", requireAuth, requireRole("ADMIN", "HR", "MANAGER"),
     data: { status: "APPROVED", approvedByEmployeeId: approver?.id ?? null },
     include: { leaveType: true, employee: true }
   });
+  // Log the approval
+  await prisma.activityLog.create({
+    data: { actorUserId: req.user!.id, action: "LEAVE_APPROVED", targetType: "LEAVE", targetId: request.id }
+  });
+  // If the leave starts now or earlier, set employee status to INACTIVE
+  const now = new Date();
+  if (request.startDate <= now) {
+    await prisma.employee.update({
+      where: { id: request.employeeId },
+      data: { status: "INACTIVE" }
+    });
+    await prisma.activityLog.create({
+      data: { actorUserId: req.user!.id, action: "EMPLOYEE_STATUS_INACTIVE_ON_LEAVE", targetType: "EMPLOYEE", targetId: request.employeeId }
+    });
+  }
   res.json({ request: {
     ...request,
     type: request.leaveType?.name ?? "ANNUAL",
